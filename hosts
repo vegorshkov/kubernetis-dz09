@@ -1,0 +1,12 @@
+cat >> /etc/hosts << EOF
+192.168.122.18 k8s-master-01
+192.168.122.4  k8s-worker-01
+192.168.122.14 k8s-worker-02
+192.168.122.23 k8s-worker-03
+192.168.122.36 k8s-worker-04
+EOF
+
+cat >> /etc/hosts << EOF
+192.168.122.38 k8s-master-02
+192.168.122.16 k8s-master-03
+EOF

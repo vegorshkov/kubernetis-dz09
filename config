@@ -1,0 +1,15 @@
+# OpenSSH client configuration file format is described in ssh_config(5) manual page.
+#
+#
+
+Host k8s-jump-01
+    HostName 158.160.54.209
+    User yc-user
+    IdentityFile ~/.ssh/netology-ext-key
+
+Host k8s-master-01 k8s-worker-01 k8s-worker-02 k8s-worker-03 k8s-worker-04
+    User yc-user
+    IdentityFile ~/.ssh/external-shared-key.priv
+    ProxyJump k8s-jump-01
+
+

@@ -1,0 +1,368 @@
+Инициализация
+
+[vgorshkov@gid-ws000455 ~]$ yc config list
+subject-id: aje0n8lvde56o7hctakt
+username: vegoхххххххххх@yandex.ru
+cloud-id: bхххххххххххххххххххt
+folder-id: b1хххххххххххххххххх7j
+compute-default-zone: ru-central1-a
+
+1.Создаем сеть
+yc vpc network create --name netology-vpc
+yc vpc subnet create \
+  --name netology-subnet \
+  --network-name netology-vpc \
+  --zone ru-central1-a \
+  --range 192.168.100.0/24
+
+yc vpc network create --name netology-vpc
+yc vpc subnet create \
+  --name netology-subnet \
+  --network-name netology-vpc \
+  --zone ru-central1-a \
+  --range 192.168.100.0/24
+
+2.Создаем Jump host
+
+[vgorshkov@gid-ws000455 ~]$ yc compute instance create \
+  --name k8s-jump-01 \
+  --zone ru-central1-a \
+  --network-interface subnet-name=netology-subnet,nat-ip-version=ipv4 \
+  --memory 1 \
+  --cores 1 \
+  --platform standard-v3 \
+  --preemptible=false \
+  --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2004-lts,size=10 \
+  --ssh-key ~/.ssh/netology-ext-key.pub
+done (53s)
+id: fhmvs991auvmmdnspd7b
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T07:29:54Z"
+name: k8s-jump-01
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "2147483648"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhmtvg8gvjc5008nvfns
+  auto_delete: true
+  disk_id: fhmtvg8gvjc5008nvfns
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:1f:e2:52:15
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.28
+      one_to_one_nat:
+        address: 158.160.54.209
+        ip_version: IPV4
+fqdn: fhmvs991auvmmdnspd7b.auto.internal
+scheduling_policy: {}
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+
+
+3. Добавим  5 прерываемых ВМ (мастер + 4 воркера)
+[vgorshkov@gid-ws000455 ~]$ yc compute instance create   --name k8s-master-01   --zone ru-central1-a   --network-interface subnet-name=netology-subnet,nat-ip-version=ipv4   --memory 4   --cores 2   --platform standard-v3   --preemptible=true   --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2004-lts,size=20   --ssh-key ~/.ssh/netology-ext-key.pub
+done (42s)
+id: fhmhofcu3rmgkd1tcqbe
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T07:38:33Z"
+name: k8s-master-01
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "4294967296"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhm1dgjj36t030hc1g3g
+  auto_delete: true
+  disk_id: fhm1dgjj36t030hc1g3g
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:11:c3:d9:e1
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.24
+      one_to_one_nat:
+        address: 89.169.139.45
+        ip_version: IPV4
+fqdn: fhmhofcu3rmgkd1tcqbe.auto.internal
+scheduling_policy:
+  preemptible: true
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+[vgorshkov@gid-ws000455 ~]$ 
+
+
+
++ Воркеры (4 штуки):
+
+[vgorshkov@gid-ws000455 ~]$ for i in {1..4}; do   yc compute instance create     --name k8s-worker-$(printf "%02d" $i)     --zone ru-central1-a     --network-interface subnet-name=netology-subnet,nat-ip-version=ipv4     --memory 4     --cores 2     --platform standard-v3     --preemptible=true     --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2004-lts,size=20     --ssh-key ~/.ssh/netology-ext-key.pub; done
+done (52s)
+id: fhmken39tuhejcjhk0hs
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T08:56:19Z"
+name: k8s-worker-01
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "4294967296"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhmdl2lhm0sk9s9gggfp
+  auto_delete: true
+  disk_id: fhmdl2lhm0sk9s9gggfp
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:14:75:c6:9e
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.17
+      one_to_one_nat:
+        address: 111.88.253.98
+        ip_version: IPV4
+fqdn: fhmken39tuhejcjhk0hs.auto.internal
+scheduling_policy:
+  preemptible: true
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+done (36s)
+id: fhm66u8akut9332lkgfv
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T08:57:13Z"
+name: k8s-worker-02
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "4294967296"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhmeeigplo3vl4c36g3q
+  auto_delete: true
+  disk_id: fhmeeigplo3vl4c36g3q
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:63:79:0a:a7
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.32
+      one_to_one_nat:
+        address: 158.160.57.212
+        ip_version: IPV4
+fqdn: fhm66u8akut9332lkgfv.auto.internal
+scheduling_policy:
+  preemptible: true
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+done (46s)
+id: fhmaohqjnfojjhov281c
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T08:57:50Z"
+name: k8s-worker-03
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "4294967296"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhmdb6hms12g4jv2l2pl
+  auto_delete: true
+  disk_id: fhmdb6hms12g4jv2l2pl
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:ac:47:53:bb
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.26
+      one_to_one_nat:
+        address: 93.77.182.201
+        ip_version: IPV4
+fqdn: fhmaohqjnfojjhov281c.auto.internal
+scheduling_policy:
+  preemptible: true
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+done (37s)
+id: fhm9ta2r8focmvh8fplm
+folder_id: bХХХХХХХХХХХХХХХХ7j
+created_at: "2026-06-18T08:58:38Z"
+name: k8s-worker-04
+zone_id: ru-central1-a
+platform_id: standard-v3
+resources:
+  memory: "4294967296"
+  cores: "2"
+  core_fraction: "100"
+status: RUNNING
+boot_disk:
+  mode: READ_WRITE
+  device_name: fhml58u3gd5j0ohdl5p7
+  auto_delete: true
+  disk_id: fhml58u3gd5j0ohdl5p7
+network_interfaces:
+  - index: "0"
+    mac_address: d0:0d:9e:a8:5b:43
+    subnet_id: eХХХХХХХХХХХХХХХa
+    primary_v4_address:
+      address: 192.168.100.33
+      one_to_one_nat:
+        address: 158.160.32.169
+        ip_version: IPV4
+fqdn: fhm9ta2r8focmvh8fplm.auto.internal
+scheduling_policy:
+  preemptible: true
+network_settings:
+  type: STANDARD
+placement_policy: {}
+gpu_settings: {}
+metadata_options:
+  gce_http_endpoint: ENABLED
+  aws_v1_http_endpoint: ENABLED
+  gce_http_token: ENABLED
+  aws_v1_http_token: DISABLED
+  aws_v2_http_endpoint: ENABLED
+  aws_v2_http_token: ENABLED
+serial_port_settings:
+  ssh_authorization: OS_LOGIN
+hardware_generation:
+  legacy_features:
+    pci_topology: PCI_TOPOLOGY_V2
+application: {}
+
+[vgorshkov@gid-ws000455 ~]$ vim ~/.ssh/config 
+[vgorshkov@gid-ws000455 ~]$ cat ~/.ssh/config
+# OpenSSH client configuration file format is described in ssh_config(5) manual page.
+#
+#
+
+Host k8s-jump-01
+    HostName 158.160.54.209
+    User ubuntu
+    IdentityFile ~/.ssh/netology-ext-key
+
+Host k8s-master-01 k8s-worker-01 k8s-worker-02 k8s-worker-03 k8s-worker-04
+    User ubuntu
+    IdentityFile ~/.ssh/netology-ext-key
+    ProxyJump k8s-jump-01
+
+
+[vgorshkov@gid-ws000455 ~]$ 
+
+
+Снимаем лишние внешние IP так как лимит на три
+yc compute instance remove-one-to-one-nat k8s-master-01 --network-interface-index 0
+yc compute instance remove-one-to-one-nat k8s-worker-01 --network-interface-index 0
+yc compute instance remove-one-to-one-nat k8s-worker-02 --network-interface-index 0
+yc compute instance remove-one-to-one-nat k8s-worker-03 --network-interface-index 0
+yc compute instance remove-one-to-one-nat k8s-worker-04 --network-interface-index 0
+
+
+yc compute instance create \
+  --name k8s-master-01 \
+  --zone ru-central1-a \
+  --network-interface subnet-name=netology-subnet \
+  --memory 4 \
+  --cores 2 \
+  --platform standard-v3 \
+  --preemptible=true \
+  --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2004-lts,size=20 \
+  --ssh-key ~/.ssh/external-shared-key.pub
+
+
